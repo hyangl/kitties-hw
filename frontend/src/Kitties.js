@@ -19,10 +19,41 @@ export default function Kitties (props) {
 
   const fetchKittyCnt = () => {
     /* TODO: 加代码，从 substrate 端读取数据过来 */
+    let unsubscribe;
+    api.query.kittiesModule.kittiesCount(count => {
+      setKittyCnt(count.toNumber());
+    }).then(unsub => {
+      unsubscribe = unsub;
+    }).catch(console.error);
+    return() => unsubscribe && unsubscribe();
   };
 
   const fetchKitties = () => {
     /* TODO: 加代码，从 substrate 端读取数据过来 */
+    let unsubscribe;
+    const all_index = Array.from(Array(kittyCnt), (v, k) => k);
+
+    api.query.kittiesModule.kitties.multi(all_index, all_kitties => {
+      api.query.kittiesModule.kittyOwners.multi(all_index, all_owner => {
+        api.query.kittiesModule.kittyPrices.multi(all_index, all_price => {
+          all_kitties.forEach(function(item, index, arr) {
+            arr[index].id = index;
+            arr[index].dna = item.unwrap();
+            arr[index].owner = keyring.encodeAddress(all_owner[index].unwrap());
+            arr[index].price = all_price[index].isEmpty?'no price': all_price[index].unwrap();
+          })
+          setKitties(all_kitties);
+        }).then(unsub => {
+          unsubscribe = unsub;
+        }).catch(console.error);
+      }).then(unsub => {
+        unsubscribe = unsub;
+      }).catch(console.error);
+    }).then(unsub => {
+      unsubscribe = unsub;
+    }).catch(console.error);
+
+    return () => unsubscribe && unsubscribe();
   };
 
   const populateKitties = () => {
@@ -34,12 +65,12 @@ export default function Kitties (props) {
   useEffect(populateKitties, [kittyDNAs, kittyOwners]);
 
   return <Grid.Column width={16}>
-    <h1>小毛孩</h1>
+    <h1>Kitty</h1>
     <KittyCards kitties={kitties} accountPair={accountPair} setStatus={setStatus}/>
     <Form style={{ margin: '1em 0' }}>
       <Form.Field style={{ textAlign: 'center' }}>
         <TxButton
-          accountPair={accountPair} label='创建小毛孩' type='SIGNED-TX' setStatus={setStatus}
+          accountPair={accountPair} label='Create Kitty' type='SIGNED-TX' setStatus={setStatus}
           attrs={{
             palletRpc: 'kittiesModule',
             callable: 'create',

@@ -13,6 +13,7 @@ const TransferModal = props => {
 
   const formChange = key => (ev, el) => {
     /* TODO: 加代码 */
+    setFormValue(prev => ({ ...prev, [key]: el.value }));
   };
 
   const confirmAndClose = (unsub) => {
@@ -20,17 +21,18 @@ const TransferModal = props => {
     setOpen(false);
   };
 
+  if (kitty.owner === accountPair.address) {
   return <Modal onClose={() => setOpen(false)} onOpen={() => setOpen(true)} open={open}
-    trigger={<Button basic color='blue'>转让</Button>}>
-    <Modal.Header>毛孩转让</Modal.Header>
+    trigger={<Button basic color='blue'>Transfer</Button>}>
+    <Modal.Header>Kitty Transfer</Modal.Header>
     <Modal.Content><Form>
-      <Form.Input fluid label='毛孩 ID' readOnly value={kitty.id}/>
-      <Form.Input fluid label='转让对象' placeholder='对方地址' onChange={formChange('target')}/>
+      <Form.Input fluid label='Kitty ID' readOnly value={kitty.id}/>
+      <Form.Input fluid label='To' placeholder='address' onChange={formChange('target')}/>
     </Form></Modal.Content>
     <Modal.Actions>
-      <Button basic color='grey' onClick={() => setOpen(false)}>取消</Button>
+      <Button basic color='grey' onClick={() => setOpen(false)}>Cancle</Button>
       <TxButton
-        accountPair={accountPair} label='确认转让' type='SIGNED-TX' setStatus={setStatus}
+        accountPair={accountPair} label='Confirm Transfer' type='SIGNED-TX' setStatus={setStatus}
         onClick={confirmAndClose}
         attrs={{
           palletRpc: 'kittiesModule',
@@ -41,9 +43,26 @@ const TransferModal = props => {
       />
     </Modal.Actions>
   </Modal>;
+  } else {
+    return null;
+  }
 };
 
 // --- About Kitty Card ---
+
+const KittyLabel = props => {
+  const {kitty, accountPair } = props;
+  if (kitty.owner === accountPair.address) {
+    return (
+      <Label style = {{ backgroudColor: 'green' }}>
+        mine
+      </Label>
+    );
+  } else {
+    return null;
+  }
+};
+
 
 const KittyCard = props => {
   /*
@@ -53,6 +72,26 @@ const KittyCard = props => {
     <TransferModal kitty={kitty} accountPair={accountPair} setStatus={setStatus}/> - 来作转让的弹出层
     ```
   */
+  const {kitty, accountPair, setStatus} = props;
+
+  return (
+    <Card>
+      <Card.Content>
+        <KittyLabel kitty = {kitty} accountPair = {accountPair} setStatus = {setStatus} />
+        <KittyAvatar dna = {kitty.dna} />
+        <Message>
+          <Card.Header>ID: {kitty.id}</Card.Header><br/>
+          <span style = {{overflowWrap: 'break-word'}}> gene: {kitty.dna.join(",")}</span><br/><br/>
+          <span style = {{overflowWrap: 'break-word'}}> owner: {kitty.owner}</span><br/><br/>
+          <span style = {{overflowWrap: 'break-word'}}> price: {kitty.price}</span><br/><br/>
+        </Message>
+      </Card.Content>
+      <Card.Content extra>
+        <TransferModal kitty = {kitty} accountPair = {accountPair} setStatus = {setStatus} />
+      </Card.Content>
+    </Card>
+
+  );
   return null;
 };
 
@@ -60,7 +99,27 @@ const KittyCards = props => {
   const { kitties, accountPair, setStatus } = props;
 
   /* TODO: 加代码。这里会枚举所有的 `KittyCard` */
-  return null;
+  if (kitties.length > 0) {
+    return (
+      <Grid stackable columns='equal'>
+        {
+          kitties.map(item => {
+            return (
+              <Grid.Column key = {item.id} width = {6}>
+                <KittyCard kitty = {item} accountPair = {accountPair} setStatus = {setStatus} />
+              </Grid.Column>
+            )
+          })
+        }
+      </Grid>
+    );
+  } else {
+    return (
+      <Label style = {{ textAlign: 'center' }}>
+        none.
+      </Label>
+    );
+  }
 };
 
 export default KittyCards;
